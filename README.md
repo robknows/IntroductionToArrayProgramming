@@ -2,7 +2,7 @@
 
 Slides and demo for this talk. Plus some links.
 
-Links:
+## Links
 
 J Vocabulary: http://www.jsoftware.com/help/dictionary/vocabul.htm
 
@@ -10,7 +10,7 @@ J Download (it's nice and easy): https://code.jsoftware.com/wiki/System/Installa
 
 Notation as a tool of thought: http://www.jsoftware.com/papers/tot.htm
 
-Practice problems:
+## Practice problems
 
 1. Project euler: https://projecteuler.net/archives
 2. Advent of code: https://adventofcode.com/
