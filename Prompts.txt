@@ -1,0 +1,248 @@
+=== Introduction to Array Programming ===
+
+Hi, I'm Rob, I'm new. I joined Zuhlke on Monday. We all know that it's Zuhlke's 50th birthday, but did you also know it's been 50 years since the first publicly available APL system was released? Today I'm going to give a gentle, but practical introduction to array programming.
+
+=== Notation as a tool of thought ===
+
++ In maths, many ideas are represented using notation, without which, we would struggle to discuss the underlying ideas fully. It is famously known, for example, that the Romans did not have a symbol for zero.
+
+Ken Iverson thought about this and wrote a paper on it, entitled "Notation as a tool of thought". The basic idea is that a rich notation helps a programmer to express and solve problems.
+
+George Boole asserted "That language is an instrument of human reason, and not merely a medium for the expression of thought, is a truth generally admitted."
+
+This philosophy of notation has extended to all subsequent array programming languages, and terse, expressive syntax is a key feature of all the languages in this family.
+
+=== Motivation ===
+
++ Here are three representations for the operation of multiplying two matrices. Array programming is a paradigm intended not just to make programs like this easy to write, but easy to actually conceive in the first place.
+
+=== Nouns and Verbs ===
+
++ Nouns are data, like numbers and strings. That's pretty easy.
+
+Verbs are like functions. In fact, you can say function and everyone will know what you mean, but there are differences to the functions you're used to in other languages.
+
++ Verbs always apply infix. No brackets, no commas.
++ This means that verbs always have either one or two arguments. My test audiences universally recoil in bewilderment when I tell them that you can't have verbs with 3 inputs, but we manage. If you really need more, you can group them into lists. For example, one list for the parameters and one for the arguments.
+
++ If it's one argument, then it's a monadic verb. Let's do some. Think about what the verb is based on the result.
+
+(sqrt reverse sum)
+
+> %: 64
+
+> |. 'zuhlke'
+
+> +/ 5 5 3 7
+
+As you can see, monads take their single argument on the right.
+
++ If a verb has two arguments however, they take an argument on the right and another one on the left as well. Two arguments. Left argument and right argument. Let's do some of those too.
+
+(plus, exp, identities)
+
+> 1 + 2
+
+> 2 ^ 3 4 5
+
+> 'left' [ 'right'
+
+> 'left' ] 'right'
+
+=== Scalars and Vectors ===
+
++ Array programming is called this because operations that apply to scalar values can also apply to vectors.
+
++ A scalar value is a single piece of data, its a piece of data that does not constitute a list.
+
++ Vectors are collections of scalars, these are arrays. They can be multi-dimensional.
+
+The dimensionality of nouns is encapsulated in the concept of rank. Scalars have rank 0. Lists of scalars have rank 1, lists of lists of scalars have rank 2 and so on. Rank is important because the way verbs apply to arguments is dependent on the rank at which they apply.
+
+Now, 1 + 4 5 6 is 5 6 7.
+
+> 1 + 4 5 6
+
+And 1 2 3 + 4 5 6.
+
+> 1 2 3 + 4 5 6
+
+The result is 5 7 9. 1 + 4, 2 + 5 and 3 + 6. But it could have been different. It could have been the three results of 1 + 4 5 6, 2 + 4 5 6 and 3 + 4 5 6. That would look like this.
+
+| myAdd =: +"0 1
+> 1 2 3 myAdd 4 5 6
+
+The difference is the rank of the verb.
+
+=== Verb rank ===
+
+Application of verbs between vectors and scalars can be done in different ways. For example, let's say I have a list of numbers 1 to 10.
+
+> numbers=:1+i.10
+> numbers
+
+If I want to append 11, I can write "numbers append 11".
+
+> numbers , 11
+
+But this isn't the only way I could apply append here. If what I really wanted was to append 11 to every element of the list, so that the result was ten lists of two elements where the second element of every list was 11? I'd do this.
+
+> numbers (,"0) 11
+
+This represents a change in the rank + of the verb "append". I have annotated append with rank 0 because 0 is the rank of an atom, and in this case I want to apply append to every atom of the list, not the entire list. Atoms have rank 0. It follows then, that lists have rank 1, lists of lists have rank 2 and so on.
+
+Here are some lists of zeros.
+
+> zeros=:3 5$0
+> zeros
+
+Let's say I want to append a 1 to all of the three lists. How would I do it? Well if I try using append as-is, I get this.
+
+> zeros , 1
+
+That's wrong, so let's annotate append with a rank that reflects the way we want to apply it. We want the verb to apply to lists of atoms on the left and atom-wise, or atomically, on the right. So the corresponding rank annotations are 1 0 - we want a left rank of 1 and a right rank of 0. This annotation results in what we want.
+
+> zeros (,"1 0) 1
+
+=== Traffic data demo 1 ===
+
+Imagine I want to run a shuttle bus service from my home in south London to Victoria train station in central London. I've got a few potential route planned out, but I want to choose between them.
+
+I've decided that I want to go with the route which encounters the fewest cyclists on main roads, for reasons of safety and speed.
+
+In this demo I'll demonstrate how we'd do this using some data that we've got.
+
+=== Traffic data demo 2 ===
+
+We've got data about the number of bicycles along main roads in London, and also of course data about the main roads along each of the routes we are choosing between.
+
+Now I'll go through in J a solution which will find us the solution to our shuttle bus route planning problem.
+
+=== Demo ===
+
+So, I've given out these demo cheat sheets, because my test audiences without the sheet were all a bit bewildered by this part.
+
+Under the "verbs" header, there are explanations for the behaviour of some of the verbs I'll be using.
+
+Under the "algebra" header, I have the rules for the algebra I'll be doing in order to extract a verb from a larger expression. These rules come from two functional constructions called hooks and forks. They are really, incredibly cool, but I would take way too long to explain them, so they unfortunately only have a cameo in this talk
+
+> load '~/jtalk/jtalkdemo.ijs'
+
+The J script I've just loaded contains the average annual daily flow data as well as the route we're testing - and a couple of helper verbs.
+
+The aadf data looks like this.
+
+> aadf
+
+Two lists with corresponding entries. The first list contains the number of the 'A' road, the second list contains the average annual daily flow of bicycles on that road. This is a mapping. It is a map from roads to flows. Roads are keys, flows are values.
+
+To access the first list the road numbers, we use the head monad. These are the keys of the mapping.
+
+> {. aadf
+
+To access the second list, the bicycle flow values, we can use the tail monad. These are the values of the mapping.
+
+> {: aadf
+
+The route data is as simple as a list of the numbers of the main roads along the route. I've got an example route called roads.
+
+> roads
+
+The verb we want takes a list of roads along the route and the aadf mapping. It returns the total flow of bicycles encountered along the route. To do this, we first perform a lookup into the aadf mapping using the list of keys, that is, the list of roads. Having done the lookup, we sum the associated values.
+
+Here's the plan.
+
+1. keys find-in mapping
+2. sum
+
+First we'll do the lookup. Here's the aadf mapping's list of keys.
+
+> {. aadf
+
+And the roads - the search keys.
+
+> roads
+
+This operation uses the index-of verb, i dot.
+
+> ({. aadf) i. roads
+
+Our list of search-keys have turned into a list of indices to gather from the mapping values.
+
+Our indices are
+
+> ({. aadf) i. roads
+
+And the mapping values are
+
+> {: aadf
+
+The gather operation uses the 'from' verb, open brace.
+
+> (({. aadf) i. roads) { ({: aadf)
+
+Lastly we sum, using the sum verb.
+
+> +/ ({. aadf) i. roads) { ({: aadf)
+
+This figure represents the average annual daily flow of bicycles our bus service will encounter.
+
+This expression however is not a verb. One way to turn this into a verb is something called an explicit definition. We would write something like
+
+> routeAadfExplicit =: 4 : '+/ (({. y) i. x) { ({: y)'
+
+But with practice you can instead write verbs straight into what is called tacit form. In Haskell this is called point free. Now, I'm going to go through how we'd extract a tacit verb from this explicit solution at the front.
+
++ Here's where we are.
+
+I've coloured nouns things blue and verbs things red. This first block of blue here is the indices. The second block of blue is the mapping-values, the flows.
+
+We're going to break down the chunk of code bit by bit, and reduce it to a form like this.
+
++
+
+To start with, we'll attack that first blob of blue - the indices. We're going to get it into the form of a single verb taking roads on the left and aadf on the right.
+
++ Okay. On the cheat sheet, look at the formulation of a hook. Ours looks a bit like that, but the arguments are the wrong way wrong. We can fix that using the reflex adverb. Adverbs modify the way verbs apply. The reflex adverb, applied to a dyadic verb, causes it to swap the arguments around. For example.
+
+> 2 % 3
+
+Is two thirds.
+
+But
+
+> 2 %~ 3
+
+Is one and a half.
+
++ Now it's in hook form. This means we can use the hook rule.
+
++ This is the form we were seeking in the beginning. We can now substitute that back into the original statement as a single step.
+
++ Now we're going to look at the big picture of everything happening to the right of the summation. That's these parts. Look at the rule for forks.
+
++ What we've got is verging on a fork, but this last part in blue here does not appear to be in the correct form.
+
++ Just as we first turned that expression for the indices into the application of a single dyad, we need to do the same to this expression.
+
+We'll need to use an identity function.
+
++ In this case, the right identity. It returns its right argument.
+
+I'm going to be weird with the spacing for a second, but it's so the next transition is smooth. What we're going to do is compose the function we originally wanted to apply monadically to the right argument onto that right identity. This will result in a verb which executes a monad against its right argument. It looks like this. +
+
+And with that, we have put that seemingly monadic application there on the right of our original formulation into a dyad of the appropriate arguments.
+
+We can now use the fork rule to substitute that big expression for a dyadic verb fork.
+
++ That big complicated expression has disappeared and been replaced by a single dyad, taking roads on the left and aadf on the right. That verb produces a list of the flow values corresponding to the given roads, which are looked up in in the aadf mapping.
+
++ The last step is to sum those flows. This represents a composition of verbs. First we get the flow values, then we sum them. A composition of verbs.
+
++ At this point we've achieved our goal and we're finished! That's where I'll stop for today.
+
+=== Thanks ===
+
++ Thank you for listening and I hope you found it interesting and perhaps even feel like you want to have a go yourself. The slides and demo are available on my github, and I've put some helpful links in the repository as well.
+
+Since we have some more time, does anyone have any questions?
